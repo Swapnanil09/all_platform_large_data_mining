@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QueryDeck</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- ── Top status rail ─────────────────────────────────────────── -->
+    <header class="rail">
+      <div class="brand">
+        <svg class="brand-mark" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <ellipse cx="12" cy="5.5" rx="7.5" ry="3" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4.5 5.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4.5 11.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <span class="brand-name">Query<span>Deck</span></span>
+      </div>
+
+      <div class="conn-picker">
+        <span class="live-dot" id="liveDot" data-state="idle"></span>
+        <select id="connSelect" aria-label="Active connection"></select>
+        <span class="engine-badge" id="engineBadge"></span>
+      </div>
+
+      <div class="rail-actions">
+        <button class="btn-ghost btn-on-dark" id="manageBtn">Connections</button>
+      </div>
+    </header>
+
+    <!-- ── Body ────────────────────────────────────────────────────── -->
+    <div class="body">
+      <aside class="sidebar">
+        <div class="side-head">
+          <span>Schema</span>
+          <button class="icon-btn" id="refreshSchema" title="Reload schema" aria-label="Reload schema">⟳</button>
+        </div>
+        <div class="side-search">
+          <input id="schemaSearch" type="text" placeholder="Filter tables & columns" autocomplete="off" />
+        </div>
+        <div class="tree" id="schemaTree"></div>
+      </aside>
+
+      <main class="main">
+        <section class="editor-pane">
+          <div class="toolbar">
+            <button class="btn-run" id="runBtn">Run<kbd>⌘↵</kbd></button>
+            <span class="tool-divider"></span>
+            <label class="rows-field">
+              <span>Rows</span>
+              <select id="pageSize">
+                <option value="100">100</option>
+                <option value="200" selected>200</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+                <option value="2000">2000</option>
+              </select>
+            </label>
+            <div class="tool-spacer"></div>
+            <button class="btn-ghost" id="countBtn" title="Count all rows the query returns">Count rows</button>
+            <button class="btn-ghost" id="csvBtn">Export CSV</button>
+            <button class="btn-ghost" id="xlsxBtn">Export Excel</button>
+          </div>
+          <div class="editor-wrap">
+            <textarea id="sql"></textarea>
+          </div>
+        </section>
+
+        <section class="results-pane">
+          <div class="result-status" id="resultStatus">
+            <span class="status-text">Pick a connection and run a query.</span>
+          </div>
+          <div class="result-scroll" id="resultScroll">
+            <div class="placeholder" id="placeholder">
+              <div class="placeholder-inner">
+                <div class="ph-title">No results yet</div>
+                <div class="ph-sub">Write SQL above and press <kbd>⌘↵</kbd> / <kbd>Ctrl↵</kbd> to run.</div>
+              </div>
+            </div>
+          </div>
+          <div class="pager" id="pager" hidden>
+            <button class="btn-ghost btn-sm" id="prevPage">‹ Prev</button>
+            <span class="page-label" id="pageLabel"></span>
+            <button class="btn-ghost btn-sm" id="nextPage">Next ›</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ── Connections modal ─────────────────────────────────────────── -->
+  <div class="modal-overlay" id="connModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="connModalTitle">
+      <div class="modal-head">
+        <h2 id="connModalTitle">Connections</h2>
+        <button class="icon-btn" id="closeModal" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="conn-list-wrap">
+          <div class="section-label">Saved</div>
+          <div class="conn-list" id="connList"></div>
+        </div>
+
+        <div class="conn-form-wrap">
+          <div class="section-label">Add a connection</div>
+          <form id="connForm" autocomplete="off">
+            <div class="seg" id="engineSeg">
+              <button type="button" class="seg-btn is-active" data-engine="mysql">MySQL / PlanetScale</button>
+              <button type="button" class="seg-btn" data-engine="clickhouse">ClickHouse</button>
+            </div>
+
+            <div class="field">
+              <label for="f_name">Display name</label>
+              <input id="f_name" name="name" placeholder="e.g. Reporting replica" />
+            </div>
+
+            <div class="grid-2">
+              <div class="field field-host">
+                <label for="f_host">Host</label>
+                <input id="f_host" name="host" placeholder="db.example.com" required />
+              </div>
+              <div class="field field-port">
+                <label for="f_port">Port</label>
+                <input id="f_port" name="port" inputmode="numeric" placeholder="3306" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label for="f_user">User</label>
+                <input id="f_user" name="user" placeholder="username" />
+              </div>
+              <div class="field">
+                <label for="f_password">Password</label>
+                <input id="f_password" name="password" type="password" placeholder="••••••••" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="f_database">Database <span class="muted" id="dbHint">(optional)</span></label>
+              <input id="f_database" name="database" placeholder="database name" />
+            </div>
+
+            <div class="adv-row">
+              <label class="check">
+                <input type="checkbox" id="f_secure" checked />
+                <span id="secureLabel">Use TLS</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="f_skip" />
+                <span>Skip certificate check</span>
+              </label>
+            </div>
+
+            <div class="form-msg" id="formMsg" hidden></div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-ghost" id="testBtn">Test connection</button>
+              <button type="submit" class="btn-run" id="saveBtn">Add connection</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Streaming download target (keeps huge exports off the browser heap) -->
+  <iframe name="dlframe" id="dlframe" style="display:none"></iframe>
+  <form id="exportForm" method="POST" action="/api/export" target="dlframe" style="display:none">
+    <input type="hidden" name="conn" />
+    <input type="hidden" name="sql" />
+    <input type="hidden" name="fmt" />
+  </form>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
