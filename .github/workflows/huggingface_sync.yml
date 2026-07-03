@@ -19,5 +19,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Replace 'Swapnanil09/querydeck' with your actual Hugging Face username/space-name
-          git push --force https://Swapnanil09:$HF_TOKEN@huggingface.co/spaces/Swapnanil09/querydeck main
+          # Replace 'swapnanil-2909/querydeck' with your actual Hugging Face username/space-name
+          git push --force https://swapnanil-2909:$HF_TOKEN@huggingface.co/spaces/swapnanil-2909/querydeck main
