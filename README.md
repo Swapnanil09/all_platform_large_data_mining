@@ -1,3 +1,13 @@
+---
+title: QueryDeck
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # QueryDeck
 
 A self-hosted query console for **MySQL / PlanetScale** and **ClickHouse** in one place. Pick a database from a dropdown, write SQL with table/column autocomplete, page through results, and stream the full result set to **CSV or Excel** — no matter how large.
