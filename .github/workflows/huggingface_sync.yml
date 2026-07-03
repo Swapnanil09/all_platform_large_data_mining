@@ -1,0 +1,23 @@
+name: Sync to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Replace 'Swapnanil09/querydeck' with your actual Hugging Face username/space-name
+          git push --force https://Swapnanil09:$HF_TOKEN@huggingface.co/spaces/Swapnanil09/querydeck main
