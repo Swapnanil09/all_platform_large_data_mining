@@ -207,6 +207,7 @@ QueryDeck talks directly to production databases, so treat it accordingly.
   ```
 
 - **`connections.json` holds credentials in plain text** for connections you add in the UI. It's already listed in `.gitignore` — keep it out of version control.
+- **Custom storage path:** You can configure a custom directory path for the `connections.json` file by setting the `QUERYDECK_DATA_DIR` environment variable (e.g., `QUERYDECK_DATA_DIR=/tmp`). This is particularly useful in environments like Docker or Hugging Face Spaces where write permissions to the application directory are restricted.
 - **Bind to localhost.** The default `127.0.0.1` keeps QueryDeck on your machine. Only use `--host 0.0.0.0` on a trusted network, and put an auth proxy in front of it if you do — there is no built-in login.
 - **Any SQL you type runs as-is**, including writes and DDL. Use a read-only database user if you only intend to read.
 

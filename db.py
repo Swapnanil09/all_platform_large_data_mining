@@ -45,7 +45,13 @@ load_dotenv()
 # --------------------------------------------------------------------------- #
 
 _HERE = Path(__file__).resolve().parent
-_CUSTOM_FILE = _HERE / "connections.json"          # user-added connections live here
+_DATA_DIR = os.environ.get("QUERYDECK_DATA_DIR")
+if _DATA_DIR:
+    _CUSTOM_DIR = Path(_DATA_DIR)
+    _CUSTOM_DIR.mkdir(parents=True, exist_ok=True)
+    _CUSTOM_FILE = _CUSTOM_DIR / "connections.json"
+else:
+    _CUSTOM_FILE = _HERE / "connections.json"
 _FILE_LOCK = threading.Lock()
 
 # Fields that must never be shown back to the browser.
@@ -520,8 +526,7 @@ def _mysql_query(cfg: dict[str, Any], sql: str, page: int, page_size: int) -> di
         if _is_wrappable(sql):
             offset = page * page_size
             cur.execute(
-                f"SELECT * FROM (\n{sql}\n) AS _qd LIMIT %s OFFSET %s",
-                (page_size + 1, offset),
+                f"SELECT * FROM (\n{sql}\n) AS _qd LIMIT {page_size + 1} OFFSET {offset}"
             )
             rows = cur.fetchall()
             has_next = len(rows) > page_size
