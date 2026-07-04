@@ -124,7 +124,7 @@
         
         item.addEventListener("click", () => {
           selectConnection(c.id);
-          optionsContainer.setAttribute("hidden", "");
+          optionsContainer.classList.remove("is-open");
           $("connPickerBtn").setAttribute("aria-expanded", "false");
         });
         
@@ -546,18 +546,18 @@
     if (triggerBtn && optionsList) {
       triggerBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const isExpanded = triggerBtn.getAttribute("aria-expanded") === "true";
-        triggerBtn.setAttribute("aria-expanded", !isExpanded);
-        if (isExpanded) {
-          optionsList.setAttribute("hidden", "");
+        const isOpen = optionsList.classList.contains("is-open");
+        triggerBtn.setAttribute("aria-expanded", !isOpen);
+        if (isOpen) {
+          optionsList.classList.remove("is-open");
         } else {
-          optionsList.removeAttribute("hidden");
+          optionsList.classList.add("is-open");
         }
       });
       document.addEventListener("click", (e) => {
         if (!triggerBtn.contains(e.target) && !optionsList.contains(e.target)) {
           triggerBtn.setAttribute("aria-expanded", "false");
-          optionsList.setAttribute("hidden", "");
+          optionsList.classList.remove("is-open");
         }
       });
     }

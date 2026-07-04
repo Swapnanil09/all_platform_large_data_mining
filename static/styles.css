@@ -179,6 +179,7 @@ kbd {
 
 /* Dropdown list container with glassmorphic blur and deep shadows */
 .conn-picker-options {
+  display: none;
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -196,8 +197,8 @@ kbd {
   transform-origin: top;
   animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.conn-picker-options[hidden] {
-  display: none !important;
+.conn-picker-options.is-open {
+  display: block !important;
 }
 
 @keyframes dropdownFadeIn {
