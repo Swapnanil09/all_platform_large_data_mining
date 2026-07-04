@@ -324,6 +324,8 @@ gunicorn app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:9001
 
 ### 4. Persistent Storage & Containerization
 When deploying as a Docker container, ensure user connection data is preserved:
+* **Directory Permissions:** The standard `Dockerfile` has been pre-configured to grant the non-root `user` ownership over the `/app` workspace directory (`RUN chown user:user /app`). This ensures the default run does not raise a `PermissionError` when writing `connections.json` inside the container.
+* **API Error Handling:** If writing to database storage still encounters folder permission errors, the `POST /api/connections` endpoint catches `PermissionError` gracefully and returns an HTTP 403 Forbidden error with a detailed diagnostics message.
 * Set the `QUERYDECK_DATA_DIR` environment variable to a folder outside of the application directory (e.g., `/data`).
 * Mount a persistent volume to that directory to keep the `connections.json` file across container restarts and updates.
 * **Docker Run Command:**

@@ -65,6 +65,8 @@ def create_connection(payload: ConnectionIn):
         return db.add_connection(payload.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=f"Database storage permission error: {e}. Please ensure the directory is writable or set QUERYDECK_DATA_DIR.")
 
 
 @app.post("/api/connections/test")

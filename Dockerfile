@@ -14,6 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application files and set ownership to the 'user'
 COPY --chown=user . .
 
+# Ensure the workdir is owned by the non-root user so it can create connections.json
+RUN chown user:user /app
+
 # Use the non-root user
 USER user
 
