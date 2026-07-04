@@ -48,6 +48,8 @@ Built for the two problems that make ad-hoc querying painful:
 - [API reference](#api-reference)
 - [Project structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
+- [Production Deployment Guide](#production-deployment-guide)
+- [Future Implementation Guide](#future-implementation-guide)
 - [Tech stack](#tech-stack)
 
 ---
@@ -272,6 +274,104 @@ Previews are capped by page size, but a heavy query (large scan, deep `OFFSET`) 
 
 **Autocomplete isn't suggesting anything**
 It only knows tables/columns from the currently selected connection. Switch connections or hit the **⟳** refresh icon in the sidebar header. Press **Ctrl-Space** to force the popup.
+
+---
+
+## Production Deployment Guide
+
+To deploy QueryDeck in a secure, stable, production-grade environment, follow these best practices:
+
+### 1. Reverse Proxy & SSL Termination
+Never expose the raw Uvicorn ASGI server directly to the public internet. Instead, place it behind Nginx, Caddy, or a cloud application load balancer.
+* **SSL/TLS:** Terminate SSL at the reverse proxy level.
+* **Caddy Example Configuration:**
+  ```caddy
+  querydeck.yourdomain.com {
+      reverse_proxy localhost:9001
+  }
+  ```
+* **Nginx Configuration Snippet:**
+  ```nginx
+  server {
+      listen 443 ssl http2;
+      server_name querydeck.yourdomain.com;
+
+      ssl_certificate /etc/letsencrypt/live/querydeck.yourdomain.com/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/querydeck.yourdomain.com/privkey.pem;
+
+      location / {
+          proxy_pass http://127.0.0.1:9001;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+  }
+  ```
+
+### 2. Access Control & Authentication
+Since QueryDeck does not have a built-in login mechanism, you must secure the application layer:
+* **OAuth2 / OIDC Proxy:** Run a proxy like [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy) in front of the application to integrate with Google Workspace, Okta, GitHub, or Active Directory.
+* **Basic Auth:** If OAuth is not feasible, configure Basic Authentication at the Nginx/Caddy proxy level.
+
+### 3. ASGI Process Management & Scaling
+For production workloads, wrap Uvicorn with **Gunicorn** to handle worker management, process restarts, and multiple CPU cores:
+```bash
+pip install gunicorn
+gunicorn app:app -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:9001
+```
+* Adjust the number of workers (`-w`) based on your core count (`(2 x cores) + 1`).
+
+### 4. Persistent Storage & Containerization
+When deploying as a Docker container, ensure user connection data is preserved:
+* Set the `QUERYDECK_DATA_DIR` environment variable to a folder outside of the application directory (e.g., `/data`).
+* Mount a persistent volume to that directory to keep the `connections.json` file across container restarts and updates.
+* **Docker Run Command:**
+  ```bash
+  docker run -d \
+    -p 9001:7860 \
+    -v /var/lib/querydeck:/data \
+    -e QUERYDECK_DATA_DIR=/data \
+    --name querydeck \
+    your-docker-image
+  ```
+
+### 5. Database Connection Hardening
+* **Read-Only Credentials:** Ensure all connections registered in QueryDeck use database credentials that are strictly restricted to read-only (`SELECT`) permissions.
+* **Network Restrictions (VPCs):** Place QueryDeck in the same Virtual Private Cloud (VPC) as your databases, or set up VPC Peering. Restrict database security groups to only accept incoming traffic on ports `3306` (MySQL) or `8443` (ClickHouse) from the QueryDeck server's security group/IP.
+
+---
+
+## Future Implementation Guide
+
+The following roadmap outlines architectural enhancements planned to mature QueryDeck into an enterprise-ready query suite:
+
+### 1. Built-in Authentication & Multi-Tenancy (RBAC)
+* **User Authentication:** Integrate FastAPI Users or OAuth2 directly into the backend using JWT tokens.
+* **Role-Based Access Control (RBAC):** Define user roles (e.g., Super Admin, DBA, Data Analyst, Read-Only).
+* **Connection Sharing Permissions:** Restrict connection visibilities so that only certain users/teams can see or query specific databases.
+
+### 2. Query Auditing, Compliance & Logging
+* **Auditing Database Table:** Create an `audit_logs` schema to log every query executed.
+* **Log Fields:** Store user ID, connection ID, query timestamp, execution time (`elapsed_ms`), total rows returned, and the exact SQL code executed.
+* **Query Capping/Kill Switch:** Introduce automatic query termination for queries running longer than a configurable threshold (e.g., 60 seconds) to avoid database lockups.
+
+### 3. Saved Queries & Collaborative Dashboards
+* **Saved Queries Panel:** Allow users to save their frequently used SQL snippets.
+* **Shared Queries:** Let team members publish useful SQL scripts to a shared library.
+* **Dynamic Parameterized Queries:** Support query placeholders (e.g., `{{start_date}}` or `{{user_id}}`) so non-technical users can execute queries with simple form inputs.
+
+### 4. Expanded Database Engine Support
+Extend the [db.py](file:///C:/Users/CLIRKOL-56/Documents/All_platform_large_data%20_mining/db.py) connection driver interface to support:
+* **PostgreSQL / Redshift** (via `psycopg2` or `asyncpg`)
+* **Snowflake** (via `snowflake-connector-python`)
+* **SQLite** (for local analytics and mock testing)
+* **Google BigQuery** (via `google-cloud-bigquery`)
+
+### 5. Advanced Query Editor & Schema Visualizations
+* **SQL Formatter:** Add a "Format SQL" button using a library like `sqlparse`.
+* **ER Diagrams:** Auto-generate interactive Entity-Relationship diagrams in the sidebar based on foreign key schemas.
+* **Visual Query Builder:** Implement a drag-and-drop query constructor for non-technical analysts.
 
 ---
 
