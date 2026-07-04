@@ -71,6 +71,8 @@ kbd {
 
 /* ── Top rail ─────────────────────────────────────────────── */
 .rail {
+  position: relative;
+  z-index: 100;
   height: var(--rail-h);
   flex: 0 0 auto;
   background: var(--rail-bg);
@@ -90,34 +92,36 @@ kbd {
 .conn-picker-custom {
   position: relative;
   display: inline-block;
-  min-width: 280px;
+  min-width: 290px;
 }
 .conn-picker-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: #11151d;
-  border: 1px solid #2b3648;
+  gap: 12px;
+  background: linear-gradient(135deg, #121824 0%, #0a0d14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   width: 100%;
-  color: #f1f5f9;
+  color: #f8fafc;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 .conn-picker-btn:hover {
-  background: #181f2b;
-  border-color: #3b4b64;
+  background: linear-gradient(135deg, #162030 0%, #0d121c 100%);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .conn-picker-btn:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 .conn-picker-btn .live-dot {
   flex: 0 0 auto;
@@ -130,11 +134,12 @@ kbd {
 }
 .conn-picker-chevron {
   flex: 0 0 auto;
-  color: #7b8595;
-  transition: transform 0.2s;
+  color: #94a3b8;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .conn-picker-btn[aria-expanded="true"] .conn-picker-chevron {
   transform: rotate(180deg);
+  color: #f8fafc;
 }
 
 .live-dot {
@@ -152,49 +157,52 @@ kbd {
 
 .engine-badge {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-radius: 4px;
   padding: 2px 6px;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .engine-badge.engine-mysql {
-  color: #4299e1;
-  background: rgba(66, 153, 225, 0.08);
-  border: 1px solid rgba(66, 153, 225, 0.2);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
 }
 .engine-badge.engine-ch {
-  color: #ecc94b;
-  background: rgba(236, 201, 75, 0.08);
-  border: 1px solid rgba(236, 201, 75, 0.2);
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
-/* Dropdown list container */
+/* Dropdown list container with glassmorphic blur and deep shadows */
 .conn-picker-options {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   width: 100%;
-  max-height: 320px;
+  max-height: 350px;
   overflow-y: auto;
-  background: #0f131a;
-  border: 1px solid #232c3b;
+  background: rgba(15, 20, 30, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   z-index: 1000;
   padding: 6px;
-  animation: dropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top;
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .conn-picker-options[hidden] {
   display: none !important;
 }
 
 @keyframes dropdownFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Scrollbar for connection options list */
@@ -205,33 +213,55 @@ kbd {
   background: transparent;
 }
 .conn-picker-options::-webkit-scrollbar-thumb {
-  background: #232c3b;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 .conn-picker-options::-webkit-scrollbar-thumb:hover {
-  background: #2f3b4e;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Option item styling */
+/* Option item styling with interactive accent bar */
 .conn-option-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 10px 12px 10px 18px;
   border-radius: 6px;
   cursor: pointer;
   color: #94a3b8;
-  transition: all 0.15s;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
 }
+.conn-option-item::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 16px;
+  background: #3b82f6;
+  border-radius: 2px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
 .conn-option-item:hover {
-  background: #18202c;
+  background: rgba(255, 255, 255, 0.04);
   color: #f8fafc;
 }
+.conn-option-item:hover::after {
+  transform: translateY(-50%) scaleY(0.7);
+  background: #60a5fa;
+}
 .conn-option-item.is-active {
-  background: #1e293b;
+  background: rgba(59, 130, 246, 0.08);
   color: #fff;
+}
+.conn-option-item.is-active::after {
+  transform: translateY(-50%) scaleY(1);
+  background: #3b82f6;
 }
 .conn-item-main {
   display: flex;
@@ -241,17 +271,26 @@ kbd {
 }
 .conn-item-icon {
   flex: 0 0 auto;
-  opacity: 0.6;
+  opacity: 0.55;
+  transition: all 0.15s ease;
 }
 .conn-option-item:hover .conn-item-icon,
 .conn-option-item.is-active .conn-item-icon {
   opacity: 1;
 }
 .conn-item-icon.color-mysql {
-  color: #4299e1;
+  color: #38bdf8;
+}
+.conn-option-item:hover .conn-item-icon.color-mysql,
+.conn-option-item.is-active .conn-item-icon.color-mysql {
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.4));
 }
 .conn-item-icon.color-ch {
-  color: #ecc94b;
+  color: #fbbf24;
+}
+.conn-option-item:hover .conn-item-icon.color-ch,
+.conn-option-item.is-active .conn-item-icon.color-ch {
+  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.4));
 }
 .conn-item-info {
   display: flex;
@@ -261,44 +300,52 @@ kbd {
 .conn-item-title {
   font-size: 13px;
   font-weight: 500;
-  color: #f1f5f9;
+  color: #cbd5e1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.15s ease;
 }
-.conn-option-item:hover .conn-item-title {
-  color: #fff;
+.conn-option-item:hover .conn-item-title,
+.conn-option-item.is-active .conn-item-title {
+  color: #f8fafc;
 }
 .conn-item-subtitle {
-  font-size: 11px;
-  color: #64748b;
+  font-size: 10.5px;
+  color: #475569;
   font-family: var(--mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 1px;
+  margin-top: 2px;
+  transition: color 0.15s ease;
 }
 .conn-option-item:hover .conn-item-subtitle {
+  color: #64748b;
+}
+.conn-option-item.is-active .conn-item-subtitle {
   color: #94a3b8;
 }
 .conn-item-badge {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   color: #475569;
-  background: #11151f;
+  background: rgba(17, 21, 31, 0.6);
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid #232c3b;
+  border: 1px solid rgba(255, 255, 255, 0.04);
   white-space: nowrap;
+  transition: all 0.15s ease;
 }
 .conn-option-item:hover .conn-item-badge {
   color: #94a3b8;
-  border-color: #3b4b64;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #11151f;
 }
 .conn-option-item.is-active .conn-item-badge {
-  color: #4299e1;
-  background: rgba(66, 153, 225, 0.1);
-  border-color: rgba(66, 153, 225, 0.2);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.15);
 }
 .rail-actions { margin-left: auto; display: flex; gap: 8px; }
 
