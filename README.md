@@ -56,8 +56,8 @@ Built for the two problems that make ad-hoc querying painful:
 
 | | |
 |---|---|
-| **Two engines, one UI** | MySQL / PlanetScale / MariaDB (anything a phpMyAdmin sits on) and ClickHouse, behind a single connection dropdown. |
-| **Add connections in the UI** | Enter host + credentials, **Test**, save. It appears in the dropdown immediately and is remembered across restarts. |
+| **Two engines, one UI** | MySQL / PlanetScale / MariaDB (anything a phpMyAdmin sits on) and ClickHouse, behind a custom-designed, interactive connection dropdown. |
+| **Add connections in the UI** | Enter host + credentials, **Test**, save. It appears in the dropdown immediately with detailed database meta-info (user, host, engine type) and status indicators, and is remembered across restarts. |
 | **Paginated previews** | Results come back in pages (100–2000 rows). Prev/Next re-run with `LIMIT/OFFSET` so the browser never chokes. |
 | **Streaming exports** | **CSV** is truly unbounded — streamed straight to disk with a server-side cursor. **Excel (.xlsx)** is written with a streaming workbook writer. |
 | **Row counting** | One click wraps your query in `COUNT(*)` to tell you the true total without fetching it. |

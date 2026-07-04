@@ -84,12 +84,52 @@
   function setLive(s) { el.liveDot.dataset.state = s; }
 
   function populateSelect() {
+    // 1. Populate the hidden native select for compatibility
     el.connSelect.innerHTML = "";
+    
+    // 2. Populate the custom dropdown
+    const optionsContainer = $("connPickerOptions");
+    if (optionsContainer) {
+      optionsContainer.innerHTML = "";
+    }
+    
     state.connections.forEach((c) => {
       const o = document.createElement("option");
       o.value = c.id;
       o.textContent = c.name + (c.provider ? ` · ${c.provider}` : "");
       el.connSelect.appendChild(o);
+      
+      if (optionsContainer) {
+        const item = document.createElement("div");
+        item.className = "conn-option-item";
+        item.dataset.value = c.id;
+        if (c.id === state.activeConn) {
+          item.classList.add("is-active");
+        }
+        
+        const engineIcon = c.engine === "clickhouse" 
+          ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="conn-item-icon color-ch"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`
+          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="conn-item-icon color-mysql"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+          
+        item.innerHTML = `
+          <div class="conn-item-main">
+            ${engineIcon}
+            <div class="conn-item-info">
+              <span class="conn-item-title">${escapeHtml(c.name)}</span>
+              <span class="conn-item-subtitle">${escapeHtml(c.user || 'no-user')}@${escapeHtml(c.host)}</span>
+            </div>
+          </div>
+          <span class="conn-item-badge">${escapeHtml(c.provider || (c.engine === 'clickhouse' ? 'ClickHouse' : 'MySQL'))}</span>
+        `;
+        
+        item.addEventListener("click", () => {
+          selectConnection(c.id);
+          optionsContainer.setAttribute("hidden", "");
+          $("connPickerBtn").setAttribute("aria-expanded", "false");
+        });
+        
+        optionsContainer.appendChild(item);
+      }
     });
   }
 
@@ -97,7 +137,30 @@
     state.activeConn = id;
     const c = state.connections.find((x) => x.id === id);
     state.engine = c ? c.engine : "mysql";
-    el.engineBadge.textContent = c ? engineLabel(c) : "";
+    
+    // Update trigger UI
+    const triggerText = $("connPickerName");
+    if (c) {
+      if (triggerText) triggerText.textContent = c.name;
+      el.engineBadge.textContent = engineLabel(c);
+      el.engineBadge.className = "engine-badge " + (c.engine === "clickhouse" ? "engine-ch" : "engine-mysql");
+    } else {
+      if (triggerText) triggerText.textContent = "Select database...";
+      el.engineBadge.textContent = "";
+    }
+    
+    // Update active class in custom option list
+    const optionsContainer = $("connPickerOptions");
+    if (optionsContainer) {
+      Array.from(optionsContainer.children).forEach((item) => {
+        if (item.dataset.value === id) {
+          item.classList.add("is-active");
+        } else {
+          item.classList.remove("is-active");
+        }
+      });
+    }
+
     el.connSelect.value = id;
     if (remember !== false) { try { localStorage.setItem("qd:lastConn", id); } catch {} }
     await loadSchema();
@@ -474,9 +537,31 @@
     }
   }
 
-  // ── wire up ────────────────────────────────────────────────
   function wireEvents() {
     el.connSelect.addEventListener("change", () => selectConnection(el.connSelect.value));
+    
+    // Custom dropdown toggler
+    const triggerBtn = $("connPickerBtn");
+    const optionsList = $("connPickerOptions");
+    if (triggerBtn && optionsList) {
+      triggerBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isExpanded = triggerBtn.getAttribute("aria-expanded") === "true";
+        triggerBtn.setAttribute("aria-expanded", !isExpanded);
+        if (isExpanded) {
+          optionsList.setAttribute("hidden", "");
+        } else {
+          optionsList.removeAttribute("hidden");
+        }
+      });
+      document.addEventListener("click", (e) => {
+        if (!triggerBtn.contains(e.target) && !optionsList.contains(e.target)) {
+          triggerBtn.setAttribute("aria-expanded", "false");
+          optionsList.setAttribute("hidden", "");
+        }
+      });
+    }
+
     el.refreshSchema.addEventListener("click", () => { if (state.activeConn) loadSchema(); });
     el.schemaSearch.addEventListener("input", filterTree);
 

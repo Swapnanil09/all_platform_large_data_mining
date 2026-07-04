@@ -27,10 +27,17 @@
         <span class="brand-name">Query<span>Deck</span></span>
       </div>
 
-      <div class="conn-picker">
-        <span class="live-dot" id="liveDot" data-state="idle"></span>
-        <select id="connSelect" aria-label="Active connection"></select>
-        <span class="engine-badge" id="engineBadge"></span>
+      <div class="conn-picker-custom" id="connPickerCustom">
+        <button class="conn-picker-btn" id="connPickerBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="live-dot" id="liveDot" data-state="idle"></span>
+          <span class="conn-picker-name" id="connPickerName">Select database...</span>
+          <span class="engine-badge" id="engineBadge"></span>
+          <svg class="conn-picker-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="conn-picker-options" id="connPickerOptions" role="listbox" hidden></div>
+        <select id="connSelect" aria-label="Active connection" style="display: none;"></select>
       </div>
 
       <div class="rail-actions">
