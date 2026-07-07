@@ -145,6 +145,12 @@ Click **Connections** in the top-right, fill in the form, hit **Test connection*
 | Database | optional — leave blank to use the connection default |
 | Use TLS | on by default; leave on for PlanetScale and other managed MySQL |
 
+**Google Cloud SQL**
+
+Standard drivers cannot connect directly using a GCP Instance Connection Name (`project:region:instance`). To connect:
+* **Option A (via IP)**: Find the instance's **Public IP** in the Google Cloud Console, authorize your local IP address under the instance's **Authorized Networks**, and configure QueryDeck with the **Public IP** as the **Host**, and disable **Use TLS** (set `secure` to `false`).
+* **Option B (via Proxy)**: Run the [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/mysql/connect-auth-proxy) locally (e.g. `.\cloud-sql-proxy.exe <instance_connection_name> --port 3307`), and in QueryDeck set the **Host** to `127.0.0.1` and the **Port** to `3307`.
+
 **ClickHouse**
 
 | Field | Notes |

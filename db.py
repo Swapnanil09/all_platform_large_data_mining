@@ -194,6 +194,16 @@ def _normalise_incoming(payload: dict[str, Any]) -> dict[str, Any]:
     host = (payload.get("host") or "").strip()
     if not host:
         raise ValueError("host is required")
+
+    # Check if host is a Google Cloud SQL Instance Connection Name (format: project:region:instance)
+    if len(host.split(":")) == 3:
+        raise ValueError(
+            "It looks like you entered a Google Cloud SQL Instance Connection Name. "
+            "Standard drivers cannot connect directly to this. Please use the public/private "
+            "IP of your database instance as the 'Host', or run the Cloud SQL Auth Proxy "
+            "locally and set the 'Host' to '127.0.0.1' and 'Port' to the proxy port."
+        )
+
     user = (payload.get("user") or "").strip()
     if not user and engine == "mysql":
         raise ValueError("user is required")
@@ -897,4 +907,10 @@ def export_xlsx(cfg: dict[str, Any], sql: str, path: str) -> dict[str, Any]:
 
 def _friendly_error(e: Exception) -> str:
     msg = str(e).strip()
+    if "idna" in msg.lower() or "label too long" in msg.lower():
+        return (
+            "Invalid hostname or IP address. If you are using a Google Cloud SQL "
+            "Instance Connection Name (project:region:instance), please connect via its IP "
+            "or run the Cloud SQL Auth Proxy locally."
+        )
     return msg or e.__class__.__name__
