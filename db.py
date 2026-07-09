@@ -122,7 +122,7 @@ DEFAULT_CONNECTIONS: list[dict[str, Any]] = [
         "port": 8443,
         "user": "mr_nirmalendu",
         "password": os.environ.get("CLICKHOUSE_DB_PASSWORD", ""),
-        "database": "default",
+        "database": "",
         "provider": "ClickHouse Cloud",
         "secure": True,
         "skip_verify": False,
@@ -508,20 +508,24 @@ def _mysql_schema(cfg: dict[str, Any]) -> dict[str, list[str]]:
     try:
         cur = conn.cursor()
         db = cfg.get("database")
+        tables: dict[str, list[str]] = {}
         if db:
             cur.execute(
                 "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS "
                 "WHERE TABLE_SCHEMA=%s ORDER BY TABLE_NAME, ORDINAL_POSITION",
                 (db,),
             )
+            for t, c in cur.fetchall():
+                tables.setdefault(t, []).append(c)
         else:
             cur.execute(
-                "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS "
-                "WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION"
+                "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') "
+                "ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION"
             )
-        tables: dict[str, list[str]] = {}
-        for t, c in cur.fetchall():
-            tables.setdefault(t, []).append(c)
+            for schema, t, c in cur.fetchall():
+                full_name = f"{schema}.{t}"
+                tables.setdefault(full_name, []).append(c)
         return tables
     finally:
         conn.close()
@@ -681,15 +685,25 @@ def _ch_client(cfg: dict[str, Any], timeout: int = 300):
 def _ch_schema(cfg: dict[str, Any]) -> dict[str, list[str]]:
     client = _ch_client(cfg, timeout=60)
     try:
-        db = cfg.get("database") or "default"
-        res = client.query(
-            "SELECT table, name FROM system.columns "
-            "WHERE database = {db:String} ORDER BY table, position",
-            parameters={"db": db},
-        )
+        db = cfg.get("database")
         tables: dict[str, list[str]] = {}
-        for t, c in res.result_rows:
-            tables.setdefault(t, []).append(c)
+        if db:
+            res = client.query(
+                "SELECT table, name FROM system.columns "
+                "WHERE database = {db:String} ORDER BY table, position",
+                parameters={"db": db},
+            )
+            for t, c in res.result_rows:
+                tables.setdefault(t, []).append(c)
+        else:
+            res = client.query(
+                "SELECT database, table, name FROM system.columns "
+                "WHERE database NOT IN ('system', 'INFORMATION_SCHEMA', 'information_schema') "
+                "ORDER BY database, table, position"
+            )
+            for d, t, c in res.result_rows:
+                full_name = f"{d}.{t}"
+                tables.setdefault(full_name, []).append(c)
         return tables
     finally:
         client.close()
@@ -825,13 +839,19 @@ def _ch_test(cfg: dict[str, Any]) -> dict[str, Any]:
     client = _ch_client(cfg, timeout=20)
     try:
         version = client.command("SELECT version()")
-        db = cfg.get("database") or "default"
-        count = client.command(
-            "SELECT count() FROM system.tables WHERE database = {db:String}",
-            parameters={"db": db},
-        )
-        return {"ok": True, "message": "Connected",
-                "detail": f"ClickHouse {version} · {count} table(s) in {db}"}
+        db = cfg.get("database")
+        if db:
+            count = client.command(
+                "SELECT count() FROM system.tables WHERE database = {db:String}",
+                parameters={"db": db},
+            )
+            detail = f"ClickHouse {version} · {count} table(s) in {db}"
+        else:
+            count = client.command(
+                "SELECT count() FROM system.tables WHERE database NOT IN ('system', 'INFORMATION_SCHEMA', 'information_schema')"
+            )
+            detail = f"ClickHouse {version} · {count} table(s)"
+        return {"ok": True, "message": "Connected", "detail": detail}
     finally:
         client.close()
 

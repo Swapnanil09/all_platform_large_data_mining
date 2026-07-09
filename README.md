@@ -125,7 +125,7 @@ Four connections ship ready to use and show up in the dropdown on first launch:
 | CRM DB | MySQL | `aws.connect.psdb.cloud` | `crm-db` |
 | Notification / Shortlink | MySQL | `aws.connect.psdb.cloud` | `notification-shortlink-db` |
 | CLIRNET DB | MySQL | `aws.connect.psdb.cloud` | `clirnetdb` |
-| ClickHouse Analytics | ClickHouse | `ayz7jk0o0v.ap-south-1.aws.clickhouse.cloud` | `default` |
+| ClickHouse Analytics | ClickHouse | `ayz7jk0o0v.ap-south-1.aws.clickhouse.cloud` | *(empty / all databases)* |
 
 These are defined in `db.py` under `DEFAULT_CONNECTIONS`. They're marked as **presets** and can't be deleted from the UI. To change or remove them, edit that list (and read [Security](#security) first).
 
@@ -269,8 +269,8 @@ The host likely uses a self-signed certificate. Edit the connection and tick **S
 **Local MySQL connection fails**
 QueryDeck tries TLS first and falls back to a plain connection automatically. If your server enforces something specific, uncheck **Use TLS** on the connection.
 
-**ClickHouse connects but shows no tables**
-The sidebar lists tables in the connection's **Database** field (default `default`). Set it to the database that actually holds your tables, or query fully-qualified names like `db.table`.
+**ClickHouse or MySQL connects but shows no tables**
+The sidebar lists tables in the connection's **Database** field. If a database is specified, only tables in that database are shown. If left empty, QueryDeck automatically loads all user databases and prefixes the table names in the sidebar with their database names (e.g. `database_name.table_name`).
 
 **Excel export is smaller than expected**
 The result exceeded Excel's 1,048,575-row limit and was truncated (a note sheet is included). Use **Export CSV** for the complete data.
