@@ -388,3 +388,5 @@ Extend the [db.py](file:///C:/Users/CLIRKOL-56/Documents/All_platform_large_data
 - **Backend**: FastAPI, Uvicorn, PyMySQL, clickhouse-connect, openpyxl, certifi
 - **Frontend**: vanilla JS + CodeMirror 5 (SQL mode + hints), Inter & JetBrains Mono
 - No build step — the frontend is static files served by the API.
+
+
