@@ -92,20 +92,20 @@ kbd {
 .conn-picker-custom {
   position: relative;
   display: inline-block;
-  min-width: 290px;
+  min-width: 210px;
 }
 .conn-picker-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background: linear-gradient(135deg, #121824 0%, #0a0d14 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 8px 14px;
+  padding: 6px 10px;
   width: 100%;
   color: #f8fafc;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -181,10 +181,12 @@ kbd {
 .conn-picker-options {
   display: none;
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 0;
-  width: 100%;
-  max-height: 350px;
+  min-width: 260px;
+  width: max-content;
+  max-width: 340px;
+  max-height: 260px;
   overflow-y: auto;
   background: rgba(15, 20, 30, 0.96);
   backdrop-filter: blur(16px);
@@ -193,7 +195,7 @@ kbd {
   border-radius: 8px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   z-index: 1000;
-  padding: 6px;
+  padding: 4px;
   transform-origin: top;
   animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -208,7 +210,7 @@ kbd {
 
 /* Scrollbar for connection options list */
 .conn-picker-options::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .conn-picker-options::-webkit-scrollbar-track {
   background: transparent;
@@ -227,9 +229,9 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px 10px 18px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 5px;
   cursor: pointer;
   color: #94a3b8;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -238,11 +240,11 @@ kbd {
 .conn-option-item::after {
   content: "";
   position: absolute;
-  left: 6px;
+  left: 4px;
   top: 50%;
   transform: translateY(-50%) scaleY(0);
-  width: 3px;
-  height: 16px;
+  width: 2.5px;
+  height: 12px;
   background: #3b82f6;
   border-radius: 2px;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -424,8 +426,11 @@ kbd {
 /* Editor pane */
 .editor-pane {
   flex: 0 0 auto; display: flex; flex-direction: column;
-  border-bottom: 1px solid var(--line-2);
   background: var(--panel);
+  height: 240px; /* Default resizable height */
+  min-height: 120px;
+  max-height: calc(100% - 120px);
+  --editor-zoom: 1;
 }
 .toolbar {
   height: 48px; flex: 0 0 auto;
@@ -447,10 +452,30 @@ kbd {
 }
 .rows-field select:focus { border-color: var(--accent); }
 
-.editor-wrap { flex: 0 0 auto; }
+.editor-wrap { flex: 1 1 auto; min-height: 0; position: relative; }
+
+/* Resizer Splitter */
+.resizer {
+  height: 6px;
+  background: var(--line-2);
+  cursor: ns-resize;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 100;
+  transition: background 0.15s, height 0.15s;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.resizer:hover, .resizer.is-dragging {
+  background: var(--accent);
+  height: 8px;
+}
 
 /* Results pane */
-.results-pane { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.results-pane {
+  flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+  --results-zoom: 1;
+}
 .result-status {
   height: 34px; flex: 0 0 auto;
   display: flex; align-items: center; gap: 12px;
@@ -480,7 +505,7 @@ table.grid thead th {
   border-bottom: 1px solid var(--line-2);
   border-right: 1px solid var(--line);
   text-align: left; white-space: nowrap;
-  font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  font-family: var(--mono); font-size: calc(11.5px * var(--results-zoom, 1)); font-weight: 600;
   color: var(--ink); letter-spacing: .2px;
   padding: 8px 14px;
 }
@@ -488,7 +513,7 @@ table.grid thead th .th-idx { color: var(--ink-faint); font-weight: 400; margin-
 table.grid thead th.rownum, table.grid tbody td.rownum {
   position: sticky; left: 0; z-index: 1;
   background: var(--head-bg); color: var(--ink-faint);
-  text-align: right; font-size: 11px; width: 1px; white-space: nowrap;
+  text-align: right; font-size: calc(11px * var(--results-zoom, 1)); width: 1px; white-space: nowrap;
   border-right: 1px solid var(--line-2);
 }
 table.grid thead th.rownum { z-index: 3; }
@@ -496,7 +521,7 @@ table.grid tbody td {
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
   padding: 6px 14px; white-space: nowrap;
-  font-family: var(--mono); font-size: 12.5px; color: #1f2733;
+  font-family: var(--mono); font-size: calc(12.5px * var(--results-zoom, 1)); color: #1f2733;
   max-width: 460px; overflow: hidden; text-overflow: ellipsis;
 }
 table.grid tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -595,29 +620,29 @@ td .null { color: var(--ink-faint); font-style: italic; }
   font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
   color: var(--ink-faint); margin-bottom: 10px;
 }
-.conn-list { display: flex; flex-direction: column; gap: 6px; }
+.conn-list { display: flex; flex-direction: column; gap: 4px; }
 .conn-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 10px; border: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border: 1px solid var(--line);
   border-radius: var(--r-ctl); background: #fff;
 }
-.conn-item .ci-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.conn-item .ci-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
 .ci-dot.mysql { background: #00618a; }
 .ci-dot.clickhouse { background: var(--amber); }
 .conn-item .ci-main { flex: 1 1 auto; min-width: 0; }
-.conn-item .ci-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conn-item .ci-name { font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conn-item .ci-sub {
-  font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .conn-item .ci-tag {
-  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+  font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
   color: var(--ink-faint); background: var(--head-bg);
-  border-radius: 4px; padding: 2px 6px; flex: 0 0 auto;
+  border-radius: 3px; padding: 1px 5px; flex: 0 0 auto;
 }
 .conn-item .ci-del {
-  background: none; border: none; color: var(--ink-faint); font-size: 14px;
-  padding: 2px 4px; border-radius: 4px; flex: 0 0 auto;
+  background: none; border: none; color: var(--ink-faint); font-size: 13px;
+  padding: 1px 3px; border-radius: 3px; flex: 0 0 auto;
 }
 .conn-item .ci-del:hover { color: var(--danger); background: var(--danger-bg); }
 
@@ -677,7 +702,7 @@ td .null { color: var(--ink-faint); font-style: italic; }
 
 /* ── CodeMirror ───────────────────────────────────────────── */
 .CodeMirror {
-  height: 168px; font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
+  height: 100% !important; font-family: var(--mono); font-size: calc(13.5px * var(--editor-zoom, 1)); line-height: 1.55;
   color: #1c2530; background: var(--panel);
 }
 .CodeMirror-gutters { background: var(--panel); border-right: 1px solid var(--line); }

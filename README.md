@@ -64,9 +64,11 @@ Built for the two problems that make ad-hoc querying painful:
 | **Streaming exports** | **CSV** is truly unbounded — streamed straight to disk with a server-side cursor. **Excel (.xlsx)** is written with a streaming workbook writer. |
 | **Row counting** | One click wraps your query in `COUNT(*)` to tell you the true total without fetching it. |
 | **SQL autocomplete** | Table and column suggestions as you type, sourced live from the selected database's schema. |
-| **Schema browser** | Filterable tree of tables → columns in the sidebar. Click to insert names into the editor. |
+| **Schema browser** | Filterable tree of tables → columns in the sidebar. Click to insert names into the editor (automatically backtick-escaped if they contain dots/dashes). |
+| **Resizable layout** | Drag the vertical splitter bar between the SQL editor and the results pane up and down to resize them. |
+| **Font size zooming** | Hold **Ctrl** (or **Cmd**) and scroll the mouse wheel over the SQL editor or results grid to zoom their font sizes in and out independently. |
 | **Zero cert config** | Public-CA TLS via `certifi`, with automatic fall back to a plain connection for local servers, plus a "skip verification" switch for self-signed certs. |
-| **Remembers your work** | Last connection and last query are restored on reload. |
+| **Remembers your work** | Last connection, last query, pane height, and zoom levels are restored on reload. |
 
 ---
 
@@ -280,6 +282,9 @@ Previews are capped by page size, but a heavy query (large scan, deep `OFFSET`) 
 
 **Autocomplete isn't suggesting anything**
 It only knows tables/columns from the currently selected connection. Switch connections or hit the **⟳** refresh icon in the sidebar header. Press **Ctrl-Space** to force the popup.
+
+**Query fails with "Table doesn't exist" or "Unknown table expression identifier"**
+Make sure you have the correct connection selected in the dropdown picker in the top rail. For example, if a table (e.g. `prod_user_activities`) belongs to ClickHouse Analytics, but you have CRM DB selected, the query will fail because the database engine cannot find it.
 
 ---
 

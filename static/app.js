@@ -210,12 +210,34 @@
         col.className = "col";
         col.dataset.name = c.toLowerCase();
         col.textContent = c;
-        col.addEventListener("click", () => insertText(c));
+        col.addEventListener("click", () => {
+          let insertVal = c;
+          if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(c)) {
+            insertVal = `\`${c}\``;
+          }
+          insertText(insertVal);
+        });
         cols.appendChild(col);
       });
 
       head.addEventListener("click", (e) => {
-        if (e.target.classList.contains("tbl-insert")) { e.stopPropagation(); insertText(t.name); return; }
+        if (e.target.classList.contains("tbl-insert")) {
+          e.stopPropagation();
+          let insertVal = t.name;
+          const conn = state.connections.find((x) => x.id === state.activeConn);
+          if (conn && !conn.database && t.name.includes(".")) {
+            const idx = t.name.indexOf(".");
+            const dbPart = t.name.substring(0, idx);
+            const tblPart = t.name.substring(idx + 1);
+            insertVal = `\`${dbPart}\`.\`${tblPart}\``;
+          } else {
+            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(t.name)) {
+              insertVal = `\`${t.name}\``;
+            }
+          }
+          insertText(insertVal);
+          return;
+        }
         wrap.classList.toggle("open");
       });
 
@@ -592,10 +614,113 @@
     });
   }
 
+  function initResizableAndZoomable() {
+    const resizer = $("resizer");
+    const editorPane = document.querySelector(".editor-pane");
+    const mainPane = document.querySelector(".main");
+
+    // 1. Pane Resizing
+    if (resizer && editorPane && mainPane) {
+      let savedHeight;
+      try { savedHeight = localStorage.getItem("qd:editorHeight"); } catch {}
+      if (savedHeight) {
+        editorPane.style.height = savedHeight + "px";
+      }
+
+      let isDragging = false;
+
+      resizer.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        resizer.classList.add("is-dragging");
+        document.body.style.cursor = "ns-resize";
+        document.body.style.userSelect = "none";
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        const mainRect = mainPane.getBoundingClientRect();
+        let newHeight = e.clientY - mainRect.top;
+        
+        const minHeight = 120;
+        const maxHeight = mainRect.height - 120;
+        if (newHeight < minHeight) newHeight = minHeight;
+        if (newHeight > maxHeight) newHeight = maxHeight;
+
+        editorPane.style.height = newHeight + "px";
+        if (editor) editor.refresh();
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (isDragging) {
+          isDragging = false;
+          resizer.classList.remove("is-dragging");
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+          const currentHeight = parseInt(editorPane.style.height, 10);
+          if (currentHeight) {
+            try { localStorage.setItem("qd:editorHeight", currentHeight); } catch {}
+          }
+        }
+      });
+    }
+
+    // 2. Font Zooming (using Ctrl + Wheel)
+    const resultsPane = document.querySelector(".results-pane");
+    if (resultsPane) {
+      let resultsZoom = 1.0;
+      try {
+        const savedResultsZoom = localStorage.getItem("qd:resultsZoom");
+        if (savedResultsZoom) resultsZoom = parseFloat(savedResultsZoom);
+      } catch {}
+      resultsPane.style.setProperty("--results-zoom", resultsZoom);
+
+      resultsPane.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          if (e.deltaY < 0) {
+            resultsZoom = Math.min(2.5, resultsZoom + 0.1);
+          } else {
+            resultsZoom = Math.max(0.6, resultsZoom - 0.1);
+          }
+          resultsPane.style.setProperty("--results-zoom", resultsZoom);
+          try { localStorage.setItem("qd:resultsZoom", resultsZoom); } catch {}
+        }
+      }, { passive: false });
+    }
+
+    if (editorPane) {
+      let editorZoom = 1.0;
+      try {
+        const savedEditorZoom = localStorage.getItem("qd:editorZoom");
+        if (savedEditorZoom) editorZoom = parseFloat(savedEditorZoom);
+      } catch {}
+      editorPane.style.setProperty("--editor-zoom", editorZoom);
+
+      const cmEl = editorPane.querySelector(".CodeMirror");
+      if (cmEl) {
+        cmEl.addEventListener("wheel", (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+              editorZoom = Math.min(2.5, editorZoom + 0.1);
+            } else {
+              editorZoom = Math.max(0.6, editorZoom - 0.1);
+            }
+            editorPane.style.setProperty("--editor-zoom", editorZoom);
+            try { localStorage.setItem("qd:editorZoom", editorZoom); } catch {}
+            if (editor) editor.refresh();
+          }
+        }, { passive: false });
+      }
+    }
+  }
+
   // ── boot ───────────────────────────────────────────────────
   async function init() {
     initEditor();
     wireEvents();
+    initResizableAndZoomable();
     try {
       state.connections = await api("/api/connections");
     } catch (e) {

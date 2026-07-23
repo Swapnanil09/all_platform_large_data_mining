@@ -713,10 +713,11 @@ def _ch_query(cfg: dict[str, Any], sql: str, page: int, page_size: int) -> dict[
     sql = _clean_sql(sql)
     client = _ch_client(cfg, timeout=120)
     started = time.perf_counter()
+    ch_settings = {"max_query_size": 10737418240}
     try:
         if _is_wrappable(sql):
             offset = page * page_size
-            res = client.query(f"SELECT * FROM (\n{sql}\n) LIMIT {page_size + 1} OFFSET {offset}")
+            res = client.query(f"SELECT * FROM (\n{sql}\n) LIMIT {page_size + 1} OFFSET {offset}", settings=ch_settings)
             rows = list(res.result_rows)
             has_next = len(rows) > page_size
             rows = rows[:page_size]
@@ -724,7 +725,7 @@ def _ch_query(cfg: dict[str, Any], sql: str, page: int, page_size: int) -> dict[
 
         # DDL / DML / SHOW / DESCRIBE
         try:
-            res = client.query(sql)
+            res = client.query(sql, settings=ch_settings)
             if res.column_names:
                 rows = list(res.result_rows)[:page_size]
                 out = _rowset(res.column_names, rows, False, 0, page_size, started)
@@ -732,7 +733,7 @@ def _ch_query(cfg: dict[str, Any], sql: str, page: int, page_size: int) -> dict[
                 return out
         except Exception:
             pass
-        summary = client.command(sql)
+        summary = client.command(sql, settings=ch_settings)
         return {
             "columns": [], "rows": [], "has_next": False, "page": 0,
             "page_size": page_size, "elapsed_ms": _ms(started),
@@ -744,7 +745,7 @@ def _ch_query(cfg: dict[str, Any], sql: str, page: int, page_size: int) -> dict[
 
 def _ch_columns(client, sql: str) -> list[str]:
     """Validate a SELECT and grab its column names without pulling rows."""
-    res = client.query(f"SELECT * FROM (\n{sql}\n) LIMIT 0")
+    res = client.query(f"SELECT * FROM (\n{sql}\n) LIMIT 0", settings={"max_query_size": 10737418240})
     return list(res.column_names)
 
 
@@ -757,7 +758,7 @@ def _ch_export_csv(cfg: dict[str, Any], sql: str) -> Iterator[bytes]:
             query_sql = f"SELECT * FROM (\n{sql}\n)"
         else:
             query_sql = sql
-        raw = client.raw_stream(query_sql, fmt="CSVWithNames")
+        raw = client.raw_stream(query_sql, fmt="CSVWithNames", settings={"max_query_size": 10737418240})
     except Exception as e:
         client.close()
         raise e
@@ -789,13 +790,14 @@ def _ch_export_xlsx(cfg: dict[str, Any], sql: str, path: str) -> dict[str, Any]:
 
     sql = _clean_sql(sql)
     client = _ch_client(cfg, timeout=3600)
+    ch_settings = {"max_query_size": 10737418240}
     try:
         if _is_wrappable(sql):
             cols = _ch_columns(client, sql)
             query_sql = f"SELECT * FROM (\n{sql}\n)"
             is_select = True
         else:
-            res = client.query(sql)
+            res = client.query(sql, settings=ch_settings)
             cols = list(res.column_names)
             is_select = False
 
@@ -807,7 +809,7 @@ def _ch_export_xlsx(cfg: dict[str, Any], sql: str, path: str) -> dict[str, Any]:
         truncated = False
 
         if is_select:
-            with client.query_row_block_stream(query_sql) as stream:
+            with client.query_row_block_stream(query_sql, settings=ch_settings) as stream:
                 for block in stream:
                     for row in block:
                         if written >= _XLSX_MAX_ROWS:

@@ -15,7 +15,12 @@ def test_preset_connections():
                 if schema.get('tables'):
                     table_name = schema['tables'][0]['name']
                     print(f"  Querying first table: {table_name}")
-                    query_res = db.run_query(c, f"SELECT * FROM `{table_name}` LIMIT 5")
+                    if '.' in table_name and not c.get('database'):
+                        parts = table_name.split('.', 1)
+                        escaped_table = f"`{parts[0]}`.`{parts[1]}`"
+                    else:
+                        escaped_table = f"`{table_name}`"
+                    query_res = db.run_query(c, f"SELECT * FROM {escaped_table} LIMIT 5")
                     print(f"    Columns: {query_res.get('columns')}")
                     print(f"    Rows count: {len(query_res.get('rows', []))}")
             except Exception as e:

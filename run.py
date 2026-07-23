@@ -9,7 +9,7 @@ import uvicorn
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="QueryDeck — multi-database query console")
-    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--host", default="0.0.0.0")
     ap.add_argument("--port", type=int, default=9001)
     ap.add_argument("--reload", action="store_true", help="auto-reload on code changes")
     ap.add_argument("--open", action="store_true", help="open the browser on start")
