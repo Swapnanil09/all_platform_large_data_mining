@@ -612,6 +612,17 @@
       const del = e.target.closest(".ci-del");
       if (del) deleteConnection(del.dataset.id);
     });
+
+    // Theme toggle handler
+    const themeToggleBtn = $("themeToggleBtn");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", () => {
+        const nextTheme = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nextTheme);
+        try { localStorage.setItem("qd:theme", nextTheme); } catch {}
+        console.log("[QueryDeck] Theme toggled to:", nextTheme);
+      });
+    }
   }
 
   function initResizableAndZoomable() {
@@ -621,48 +632,103 @@
 
     // 1. Pane Resizing
     if (resizer && editorPane && mainPane) {
+      console.log("[QueryDeck] Resizer elements found. Initializing...");
       let savedHeight;
-      try { savedHeight = localStorage.getItem("qd:editorHeight"); } catch {}
-      if (savedHeight) {
+      try {
+        savedHeight = localStorage.getItem("qd:editorHeight");
+      } catch (err) {
+        console.error("[QueryDeck] Failed to read localStorage:", err);
+      }
+      if (savedHeight && !isNaN(savedHeight) && parseInt(savedHeight, 10) > 0) {
         editorPane.style.height = savedHeight + "px";
+        console.log("[QueryDeck] Restored height from cache:", savedHeight);
       }
 
       let isDragging = false;
+      let startHeight = 0;
+      let startY = 0;
 
-      resizer.addEventListener("mousedown", (e) => {
+      // Disable browser native dragging on resizer
+      resizer.addEventListener("dragstart", (e) => e.preventDefault());
+
+      const startDrag = (clientY) => {
         isDragging = true;
+        startHeight = editorPane.offsetHeight;
+        startY = clientY;
         resizer.classList.add("is-dragging");
         document.body.style.cursor = "ns-resize";
         document.body.style.userSelect = "none";
-        e.preventDefault();
-      });
+        document.body.style.webkitUserSelect = "none"; // Safari safety
+        console.log("[QueryDeck] Resizer drag started. startHeight:", startHeight, "startY:", startY);
+      };
 
-      document.addEventListener("mousemove", (e) => {
+      const doDrag = (clientY) => {
         if (!isDragging) return;
-        const mainRect = mainPane.getBoundingClientRect();
-        let newHeight = e.clientY - mainRect.top;
+        let deltaY = clientY - startY;
+        let newHeight = startHeight + deltaY;
         
         const minHeight = 120;
-        const maxHeight = mainRect.height - 120;
+        const mainHeight = mainPane.clientHeight || 500;
+        const maxHeight = Math.max(minHeight + 50, mainHeight - 120);
         if (newHeight < minHeight) newHeight = minHeight;
         if (newHeight > maxHeight) newHeight = maxHeight;
 
         editorPane.style.height = newHeight + "px";
         if (editor) editor.refresh();
-      });
+      };
 
-      document.addEventListener("mouseup", () => {
-        if (isDragging) {
-          isDragging = false;
-          resizer.classList.remove("is-dragging");
-          document.body.style.cursor = "";
-          document.body.style.userSelect = "";
-          const currentHeight = parseInt(editorPane.style.height, 10);
-          if (currentHeight) {
-            try { localStorage.setItem("qd:editorHeight", currentHeight); } catch {}
+      const stopDrag = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        resizer.classList.remove("is-dragging");
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        document.body.style.webkitUserSelect = "";
+        const currentHeight = parseInt(editorPane.style.height, 10);
+        console.log("[QueryDeck] Resizer drag stopped. Final height:", currentHeight);
+        if (currentHeight && !isNaN(currentHeight)) {
+          try {
+            localStorage.setItem("qd:editorHeight", currentHeight);
+          } catch (err) {
+            console.error("[QueryDeck] Failed to write localStorage:", err);
           }
         }
+      };
+
+      // Mouse handlers
+      resizer.addEventListener("mousedown", (e) => {
+        startDrag(e.clientY);
+        e.preventDefault();
       });
+
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          doDrag(e.clientY);
+        }
+      });
+
+      document.addEventListener("mouseup", stopDrag);
+
+      // Touch handlers (safety for touch-enabled mice/screens)
+      resizer.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+          startDrag(e.touches[0].clientY);
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      document.addEventListener("touchmove", (e) => {
+        if (isDragging && e.touches.length === 1) {
+          doDrag(e.touches[0].clientY);
+          e.preventDefault(); // Prevents page scrolling while dragging
+        }
+      }, { passive: false });
+
+      document.addEventListener("touchend", stopDrag);
+      document.addEventListener("touchcancel", stopDrag);
+
+    } else {
+      console.warn("[QueryDeck] Resizer init skipped. Elements missing:", { resizer, editorPane, mainPane });
     }
 
     // 2. Font Zooming (using Ctrl + Wheel)
@@ -675,18 +741,21 @@
       } catch {}
       resultsPane.style.setProperty("--results-zoom", resultsZoom);
 
-      resultsPane.addEventListener("wheel", (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          if (e.deltaY < 0) {
-            resultsZoom = Math.min(2.5, resultsZoom + 0.1);
-          } else {
-            resultsZoom = Math.max(0.6, resultsZoom - 0.1);
+      const scrollEl = resultsPane.querySelector(".result-scroll");
+      if (scrollEl) {
+        scrollEl.addEventListener("wheel", (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+              resultsZoom = Math.min(2.5, resultsZoom + 0.1);
+            } else {
+              resultsZoom = Math.max(0.6, resultsZoom - 0.1);
+            }
+            resultsPane.style.setProperty("--results-zoom", resultsZoom);
+            try { localStorage.setItem("qd:resultsZoom", resultsZoom); } catch {}
           }
-          resultsPane.style.setProperty("--results-zoom", resultsZoom);
-          try { localStorage.setItem("qd:resultsZoom", resultsZoom); } catch {}
-        }
-      }, { passive: false });
+        }, { passive: false });
+      }
     }
 
     if (editorPane) {
@@ -718,6 +787,12 @@
 
   // ── boot ───────────────────────────────────────────────────
   async function init() {
+    let savedTheme = "light";
+    try {
+      savedTheme = localStorage.getItem("qd:theme") || "light";
+    } catch {}
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
     initEditor();
     wireEvents();
     initResizableAndZoomable();

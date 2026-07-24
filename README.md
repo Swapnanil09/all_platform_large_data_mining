@@ -66,6 +66,7 @@ Built for the two problems that make ad-hoc querying painful:
 | **SQL autocomplete** | Table and column suggestions as you type, sourced live from the selected database's schema. |
 | **Schema browser** | Filterable tree of tables → columns in the sidebar. Click to insert names into the editor (automatically backtick-escaped if they contain dots/dashes). |
 | **Resizable layout** | Drag the vertical splitter bar between the SQL editor and the results pane up and down to resize them. |
+| **Dark / Light themes** | Fully proportioned dark and light mode toggle. CodeMirror syntax tokens, active line styling, modals, forms, and results grid adapt dynamically, with theme choice persisted. |
 | **Font size zooming** | Hold **Ctrl** (or **Cmd**) and scroll the mouse wheel over the SQL editor or results grid to zoom their font sizes in and out independently. |
 | **Zero cert config** | Public-CA TLS via `certifi`, with automatic fall back to a plain connection for local servers, plus a "skip verification" switch for self-signed certs. |
 | **Remembers your work** | Last connection, last query, pane height, and zoom levels are restored on reload. |
